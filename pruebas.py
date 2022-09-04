@@ -37,9 +37,7 @@ if __name__ == '__main__':
 """
 This Example will show you how to use CallbackData
 """
-from json import load, dump
-from telebot import TeleBot
-from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup)
-bot = TeleBot("5530592078:AAEcb0EiHsntHj2HlqDIqqY9QKkxbS4070E")
-#pregunta = bot.edit_message_text(chat_id=742390776,message_id=465, text="...Todas las condiciones...¿Quieres pertencer a nuestro equipo?.")
-bot.delete_message(chat_id=742390776,message_id=504)
+from binance.client import Client
+cl=Client('WEMGeMxAHpBZFyvWyz2COVgQfOzLWla2WKKczHItgcpLCuVvqUZiLP4rzMDAvYu3','GoUVha8y1DJzdUCE9gNW7KxKVNN2z509AtMzM62QoFYDI0kLdrUcsVv0Mk1dtnB'
+)
+list_balance = cl.futures_account_balance()
