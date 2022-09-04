@@ -1,9 +1,8 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
-*$py.class
 password.py
-*.json
+data.json
+datos.json
 jsons.py
 pruebas.py
 pruebaTronpy.py
