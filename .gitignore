@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 password.py
+*.json
+jsons.py
+pruebas.py
+pruebaTronpy.py
+tron_pruebaTronapi.py
 # C extensions
 *.so
 
