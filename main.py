@@ -7,36 +7,76 @@ Created on Thu Apr  1 19:40:27 2021
 import os
 from time import sleep
 from requests import post
-from password import *
-from binance.client import Client
 from json import load, dump
 from telebot import TeleBot
+from binance.client import Client
 from threading import Thread
 from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup)
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives.hashes import SHA256
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from base64 import urlsafe_b64encode
 from wallet.wallet import Wallet_tech
 import qrcode
+
+
+class Cliente:
+    """
+    Esta clase genera el cliente con conexión a Binance
+    """
+
+    def __init__(self, key: str, secret: str) -> None:
+        self.client = Client(key, secret)
+
+
+class Apis:
+    def __init__(self):
+        self.dict_api = {}
+
+    def savekey(self, message, call):
+        self.mes = res[message.chat.id][0]
+        self.call = res[message.chat.id][1]
+        bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
+        self.dict_api[message.chat.id]['key'] = message.text
+        bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
+        bot.send_message(self.mes.chat.id, "Se guardo su key")
+
+    def savesecret(self, message, call):
+        self.mes = res[message.chat.id][0]
+        self.call = res[message.chat.id][1]
+        bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
+        self.dict_api[message.chat.id]['secret'] = message.text
+        bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
+        bot.send_message(self.mes.chat.id, "Se guardo su secret")
+
+
 # bot = TeleBot("5530592078:AAEcb0EiHsntHj2HlqDIqqY9QKkxbS4070E")#rosa
 bot = TeleBot('1672385199:AAGw8Wocay7hrLUJIqNYZmcpZiLPtk-fla8')  # miyessbot
 # bot = TeleBot('5022330876:AAG6pc1gL4pRgDjluE4pgnf3wvLwMIwhjTg')  # rifa navidad
 # Creamos el bot. Sustituir <TOKEN> con el token de nuestro bot
-condiciones = "1. No nos hacemos responsables si se pierde dinero ya que"+ \
-            ' esto del trading es algo incierto.\n'+\
-            '2. Nuestra comisión es del 25% pero solo de las ganancias, no hay más cobros '+\
-            'y todo se hace por medio de la red de TRON.\n' + \
-            '3. Las API solamente estan activas para Binance por ahora.\n' + \
-            '4. Que la estrategia funcione años atrás no significa que funcione en este momento.\n\n' + \
-            "<b>¿Quieres pertenecer a nuestro equipo?.</b>"
+
+
+def delete_m(mes):
+    sleep(5)
+    bot.delete_message(chat_id=mes.chat.id, message_id=mes.id)
+
+
+save_api = Apis()
+
+condiciones = "1. No nos hacemos responsables si se pierde dinero ya que" + \
+    ' esto del trading es algo incierto.\n' +\
+    '2. Nuestra comisión es del 25% pero solo de las ganancias, no hay más cobros ' +\
+    'y todo se hace por medio de la red de TRON.\n' + \
+    '3. Las API solamente estan activas para Binance por ahora.\n' + \
+    '4. Que la estrategia funcione años atrás no significa que funcione en este momento.\n\n' + \
+    "<b>¿Quieres pertenecer a nuestro equipo?.</b>"
+
 
 @bot.message_handler(commands=['start', 'iniciar'])
 def _command_start(m):
     cid = m.from_user.id
     nombre = m.from_user.first_name
-    with open('data.json') as fp:
-        listObj = load(fp)
+    try:
+        with open('data.json') as fp:
+            listObj = load(fp)
+    except:
+        pass
     if str(cid) not in listObj.keys():
         bot.send_message(cid, 'Bienvenido '+nombre+' somos <b>TechMasters</b> un equipo' +
                          ' de 4 personas que lleva más de dos años en la creación de un' +
@@ -100,7 +140,6 @@ res = {}
 
 @bot.callback_query_handler(func=lambda c: ['secret', 'key', 'continue'].count(c.data) > 0)
 def _save(call):
-    secur = Security()
     llamada = call.data
     if llamada == 'secret':
         message_secret = bot.send_message(
@@ -120,8 +159,8 @@ def _save(call):
                 bot.answer_callback_query(
                     callback_query_id=call.id, text='Estamos revisando las API', show_alert=True)
                 try:
-                    cl = Cliente(secur.decrypt_api(save_api.dict_api[call.from_user.id]['key']), secur.decrypt_api(
-                        save_api.dict_api[call.from_user.id]['secret']))
+                    cl = Cliente(
+                        save_api.dict_api[call.from_user.id]['key'], save_api.dict_api[call.from_user.id]['secret'])
                     list_balance = cl.client.futures_account_balance()
                     balance = float([x['balance']
                                     for x in list_balance if x['asset'] == 'USDT'][0])
@@ -167,7 +206,8 @@ def _save(call):
                     qr.make(fit=True)
                     img = qr.make_image(fill_color="black", back_color="white")
                     img.save('qr-'+str(call.from_user.id)+'.png')
-                    bot.send_photo(call.from_user.id,photo=open('qr-'+str(call.from_user.id)+'.png','rb'))
+                    bot.send_photo(call.from_user.id, photo=open(
+                        'qr-'+str(call.from_user.id)+'.png', 'rb'))
                     os.remove('qr-'+str(call.from_user.id)+'.png')
                     save_api.dict_api[call.from_user.id]['address'] = data_wallet['address']
                     save_api.dict_api[call.from_user.id]['private_key'] = data_wallet['private_key']
@@ -191,81 +231,22 @@ def _save(call):
             order_exe.start()
 
 
+@bot.callback_query_handler(func=lambda c: ['secret', 'key', 'continue'].count(c.data) > 0)
+def _save(call):
+    pass
+
+
 @bot.message_handler(commands=['condiciones'])
 def _command_help(m):
     cid = m.from_user.id
     bot.delete_message(timeout=2, chat_id=cid, message_id=m.message_id,)
-    bot.send_message(cid,condiciones,parse_mode='HTML')
-
-
-class Cliente:
-    """
-    Esta clase genera el cliente con conexión a Binance
-    """
-
-    def __init__(self, key: str, secret: str) -> None:
-        self.client = Client(key, secret)
-
-
-class Apis:
-    def __init__(self):
-        self.dict_api = {}
-        self.security = Security()
-
-    def savekey(self, message, call):
-        self.mes = res[message.chat.id][0]
-        self.call = res[message.chat.id][1]
-        bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
-        self.dict_api[message.chat.id]['key'] = self.security.encrypt_api(
-            message.text)
-        bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
-        bot.send_message(self.mes.chat.id, "Se guardo su key")
-
-    def savesecret(self, message, call):
-        self.mes = res[message.chat.id][0]
-        self.call = res[message.chat.id][1]
-        bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
-        self.dict_api[message.chat.id]['secret'] = self.security.encrypt_api(
-            message.text)
-        bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
-        bot.send_message(self.mes.chat.id, "Se guardo su secret")
-
-
-def delete_m(mes):
-    sleep(5)
-    bot.delete_message(chat_id=mes.chat.id, message_id=mes.id)
-
-
-class Security:
-    def __init__(self) -> None:
-        self.__key1 = pass1.encode()
-        self.__key2 = pass2.encode()
-
-    def __get_fernet(self):
-        kdf = PBKDF2HMAC(
-            algorithm=SHA256(),
-            length=32,
-            salt=self.__key2,
-            iterations=390000,)
-        key = urlsafe_b64encode(kdf.derive(self.__key1))
-        fernet = Fernet(key)
-        return fernet
-
-    def decrypt_api(self, text):
-        textDecrypt = self.__get_fernet().decrypt(text.encode())
-        return_text = textDecrypt.decode()
-        return return_text
-
-    def encrypt_api(self, text):
-        textDecrypt = self.__get_fernet().encrypt(text.encode())
-        return_text = textDecrypt.decode()
-        return return_text
-
+    bot.send_message(cid, condiciones, parse_mode='HTML')
 
 # Por útlimo, hacemos el long-poll, es decir, le decimos al bot que
 # empiece a leer los mensajes que el bot reciba.
+
+
 if __name__ == '__main__':
     print('Inicio')
-    save_api = Apis()
     # bot.polling(True)
     bot.infinity_polling(timeout=10, long_polling_timeout=5)

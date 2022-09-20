@@ -7,6 +7,7 @@ jsons.py
 pruebas.py
 pruebaTronpy.py
 tron_pruebaTronapi.py
+.env
 # C extensions
 *.so
 
