@@ -14,6 +14,8 @@ from config.bdConnect import usersFunc
 from models.models import UserModel
 from wallet.wallet import Wallet_tech
 
+connUsers = usersFunc()
+
 
 class Cliente:
     """
@@ -24,26 +26,26 @@ class Cliente:
         self.client = Client(key, secret)
 
 
-class Apis:
-    def __init__(self, id):
-        self.dict_api = {}
-        self.dict_api[id] = {}
+# class Apis:
+#     def __init__(self, id):
+#         self.dict_api = {}
+#         self.dict_api[id] = {}
 
-    def savekey(self, message):
-        self.mes = res[message.chat.id][0]
-        self.call = res[message.chat.id][1]
-        bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
-        self.dict_api[message.chat.id]['key'] = message.text
-        bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
-        bot.send_message(self.mes.chat.id, "Se guardo su key")
+#     def savekey(self, message):
+#         self.mes = res[message.chat.id][0]
+#         self.call = res[message.chat.id][1]
+#         bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
+#         self.dict_api[message.chat.id]['key'] = message.text
+#         bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
+#         bot.send_message(self.mes.chat.id, "Se guardo su key")
 
-    def savesecret(self, message):
-        self.mes = res[message.chat.id][0]
-        self.call = res[message.chat.id][1]
-        bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
-        self.dict_api[message.chat.id]['secret'] = message.text
-        bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
-        bot.send_message(self.mes.chat.id, "Se guardo su secret")
+#     def savesecret(self, message):
+#         self.mes = res[message.chat.id][0]
+#         self.call = res[message.chat.id][1]
+#         bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
+#         self.dict_api[message.chat.id]['secret'] = message.text
+#         bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
+#         bot.send_message(self.mes.chat.id, "Se guardo su secret")
 
 
 # bot = TeleBot("5530592078:AAEcb0EiHsntHj2HlqDIqqY9QKkxbS4070E")#rosa
@@ -56,8 +58,6 @@ def delete_m(mes):
     sleep(5)
     bot.delete_message(chat_id=mes.chat.id, message_id=mes.id)
 
-
-connUsers = usersFunc()
 
 condiciones = "1. No nos hacemos responsables si se pierde dinero ya que" + \
     ' esto del trading es algo incierto.\n' +\
@@ -72,7 +72,7 @@ condiciones = "1. No nos hacemos responsables si se pierde dinero ya que" + \
 def _command_start(m):
     cid = m.from_user.id
     nombre = m.from_user.first_name
-    objectReturn = connUsers.read_User({'_id': cid})
+    objectReturn = connUsers.read_User(str(cid))
     if objectReturn == None:
         bot.send_message(cid, 'Bienvenido '+nombre+' somos <b>TechMasters</b> un equipo' +
                          ' de 4 personas que lleva más de dos años en la creación de un' +
@@ -119,8 +119,7 @@ def _callback_query(call):
 
 @bot.callback_query_handler(func=lambda c: ['ingresar_api'].count(c.data) > 0)
 def _callback_query(call):
-    global save_api
-    save_api = Apis(call.from_user.id)
+    connUsers.send_User(UserModel(_id=str(call.from_user.id), cex='binance'))
     llamada = call.data
     if llamada == 'ingresar_api':
         markup2 = InlineKeyboardMarkup(
@@ -132,9 +131,6 @@ def _callback_query(call):
                               text=text_ver, reply_markup=markup2, parse_mode="HTML")
 
 
-res = {}
-
-
 @bot.callback_query_handler(func=lambda c: ['secret', 'key', 'continue'].count(c.data) > 0)
 def _save(call):
 
@@ -142,90 +138,87 @@ def _save(call):
     if llamada == 'secret':
         message_secret = bot.send_message(
             call.from_user.id, 'Por favor escriba su API Secret')
-        res[call.from_user.id] = [message_secret, call]
-        bot.register_next_step_handler(
-            message_secret, save_api.savesecret)
+        bot.register_next_step_handler(message_secret, updateBD, 'SECRET')
     if llamada == 'key':
         message_key = bot.send_message(
             call.from_user.id, 'Por favor escriba su API Key')
-        res[call.from_user.id] = [message_key, call]
-        bot.register_next_step_handler(message_key, save_api.savekey)
+        bot.register_next_step_handler(message_key, updateBD, 'KEY')
     if llamada == 'continue':
+        receiptData = connUsers.read_User(str(call.from_user.id))
+        if receiptData['API_key'] != None and receiptData['API_secret'] != None:
+            bot.answer_callback_query(
+                callback_query_id=call.id, text='Estamos revisando las API', show_alert=True)
+            try:
+                cl = Cliente(receiptData['API_key'], receiptData['API_secret'])
+                list_balance = cl.client.futures_account_balance()
+                balance = float([x['balance']
+                                for x in list_balance if x['asset'] == 'USDT'][0])
+            except Exception as e:
+                print(e)
+                bot.send_message(call.from_user.id, 'APIS  invalidas')
+                balance = -1
 
-        if save_api.dict_api.get(call.from_user.id) != None:
-            if save_api.dict_api[call.from_user.id].get('key') != None and save_api.dict_api[call.from_user.id].get('secret') != None:
-                bot.answer_callback_query(
-                    callback_query_id=call.id, text='Estamos revisando las API', show_alert=True)
-                try:
-                    cl = Cliente(
-                        save_api.dict_api[call.from_user.id]['key'], save_api.dict_api[call.from_user.id]['secret'])
-                    list_balance = cl.client.futures_account_balance()
-                    balance = float([x['balance']
-                                    for x in list_balance if x['asset'] == 'USDT'][0])
-                except Exception as e:
-                    print(e)
-                    bot.send_message(call.from_user.id, 'APIS  invalidas')
-                    balance = -1
+            if float(balance) > 40.0:
+                bot.delete_message(
+                    chat_id=call.from_user.id, message_id=call.message.message_id)
+                bot.send_message(
+                    call.from_user.id, 'Su saldo es {} USDT y estan agregadas tus API.'.format(round(balance, 2)))
+                bot.send_message(call.from_user.id, text='Ya queda el ultimo paso que es activar tus API, ahora te enviaremos una Wallet en la red de TRON, esta Wallet la administra este bot y para activar tu cuenta y comenzar a recibir las ordenes debes envíar minimo el 10' +
+                                 '%'+' del saldo de tu cuenta, de esta cuenta se descontaran las comisiones de nuestro equipo.')
+                wallet = Wallet_tech()
+                data_wallet = wallet.create_wallet(str(call.from_user.id))
+                bot.send_photo(call.from_user.id, photo=open(
+                    'qr-'+str(call.from_user.id)+'.png', 'rb'))
+                remove('qr-'+str(call.from_user.id)+'.png')
+                bot.send_message(
+                    call.from_user.id, text='Tu Wallet es la siguiente: '+data_wallet['address'])
+                connUsers.update_User(str(call.from_user.id), {
+                                      'address': data_wallet['address'], 'privateKey': data_wallet['private_key'], 'initBalance': float(balance)})
+                markup2 = InlineKeyboardMarkup(
+                    [[InlineKeyboardButton(text="Verificar", callback_data="verificar_saldo")]])
+                text_ver = "Dale a verificar cuando se confirme el deposito."
+                bot.send_message(
+                    chat_id=call.from_user.id, text=text_ver, reply_markup=markup2, parse_mode="HTML")
 
-                if float(balance) > 40.0:
-                    bot.delete_message(
-                        chat_id=call.from_user.id, message_id=call.message.message_id)
-                    bot.send_message(
-                        call.from_user.id, 'Su saldo es {} y estan agregadas tus API.'.format(round(balance, 2)))
-                    print('se logro', call.from_user.id)
-                    # post('https://api.telegram.org/bot5243749301:AAHIDCwt13NLYpmJ7WVaJLs57G0Z_IyFTLE/sendMessage',
-                    #     data={'chat_id': '-548326689', 'text': 'Realizado el agregado'})
-
-                    # inicio de la wallet para la conexión y recarga
-                    bot.send_message(call.from_user.id, text='Ya queda el ultimo paso que es activar tus API, ahora te enviaremos una Wallet en la red de TRON, esta Wallet la administra este bot y para activar tu cuenta y comenzar a recibir las ordenes debes envíar minimo el 10' +
-                                     '%'+' del saldo de tu cuenta, de esta cuenta se descontaran las comisiones de nuestro equipo.')
-                    wallet = Wallet_tech()
-                    data_wallet = wallet.create_wallet(str(call.from_user.id))
-                    bot.send_photo(call.from_user.id, photo=open(
-                        'qr-'+str(call.from_user.id)+'.png', 'rb'))
-                    remove('qr-'+str(call.from_user.id)+'.png')
-                    bot.send_message(
-                        call.from_user.id, text='Tu Wallet es la siguiente: '+data_wallet['address'])
-                    save_api.dict_api[call.from_user.id]['address'] = data_wallet['address']
-                    save_api.dict_api[call.from_user.id]['privateKey'] = data_wallet['private_key']
-                    connUsers.send_User(UserModel(id=str(call.from_user.id), cex='binance', API_key=save_api.dict_api[call.from_user.id]['key'], API_secret=save_api.dict_api[
-                                        call.from_user.id]['secret'], address=save_api.dict_api[call.from_user.id]['address'], privateKey=save_api.dict_api[call.from_user.id]['privateKey'], initBalance=float(balance)))
-                    markup2 = InlineKeyboardMarkup(
-                        [[InlineKeyboardButton(text="Verificar", callback_data="verificar_saldo")]])
-                    text_ver = "Dale a verificar cuando se confirme el deposito."
-                    bot.edit_message_text(chat_id=call.from_user.id, message_id=call.message.message_id,
-                                          text=text_ver, reply_markup=markup2, parse_mode="HTML")
-                elif float(balance) != -1:
-                    bot.send_message(
-                        call.from_user.id, 'Su saldo es {}, pero no alcanzas, debes recargar más.'.format(round(balance, 2)))
-            else:
-                mess = bot.send_message(
-                    chat_id=call.from_user.id, text='Por favor escribe tus APIS')
-                order_exe = Thread(target=delete_m, args=(mess,))
-                order_exe.start()
+            elif float(balance) != -1:
+                bot.send_message(
+                    call.from_user.id, 'Su saldo es {} USDT, pero no alcanzas, debes recargar más.'.format(round(balance, 2)))
         else:
             mess = bot.send_message(
                 chat_id=call.from_user.id, text='Por favor escribe tus APIS')
             order_exe = Thread(target=delete_m, args=(mess,))
             order_exe.start()
-    del save_api
-    del cl
+
+
+def updateBD(mm, call):
+    bot.delete_message(chat_id=mm.chat.id, message_id=mm.id)
+    if call == 'KEY':
+        bot.send_message(mm.chat.id, "Se guardo su KEY")
+        connUsers.update_User(str(mm.from_user.id), {'API_key': mm.text})
+    if call == 'SECRET':
+        bot.send_message(mm.chat.id, "Se guardo su SECRET")
+        connUsers.update_User(str(mm.from_user.id), {'API_secret': mm.text})
 
 
 @bot.callback_query_handler(func=lambda c: ['verificar_saldo'].count(c.data) > 0)
 def _verifying(call):
     base_data = connUsers.read_User(str(call.from_user.id))
     wallet = Wallet_tech()
-    balance = wallet.get_balance(base_data['address'])
+    balance = wallet.get_balance('TMWfP525ovrpfe9V6iZL51MgtoDRF8FT9B')
     cl = Cliente(base_data['API_key'], base_data['API_secret'])
     markPrice = cl.client.futures_mark_price(symbol='TRXUSDT')['markPrice']
     if float(markPrice)*float(balance) >= base_data['initBalance']*0.1:
         bot.send_message(call.from_user.id,
-                         text='Tu saldo es de '+str(balance))
+                         text='Tu saldo es de '+str(balance) + 'TRX')
         bot.send_message(call.from_user.id, text='Tu cuenta esta activada')
-        connUsers.update_User(str(call.from_user.id), 'enabled', True)
+        connUsers.update_User(str(call.from_user.id), {'enabled': True})
         bot.delete_message(
             chat_id=call.from_user.id, message_id=call.message.message_id)
+    else:
+        bot.send_message(call.from_user.id,
+                         text='Tu saldo es de '+str(balance) + 'TRX')
+        bot.send_message(call.from_user.id,
+                         text='Tu cuenta no esta activada, debes recargar mas')
 
 
 @bot.message_handler(commands=['condiciones'])
