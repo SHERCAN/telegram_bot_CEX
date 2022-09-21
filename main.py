@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Apr  1 19:40:27 2021
-@author: Yesid Farfan
-"""
-# Importamos el módulo de pyTelegramBotAPI
 from os import remove
 from time import sleep
 from telebot import TeleBot
@@ -24,28 +18,6 @@ class Cliente:
 
     def __init__(self, key: str, secret: str) -> None:
         self.client = Client(key, secret)
-
-
-# class Apis:
-#     def __init__(self, id):
-#         self.dict_api = {}
-#         self.dict_api[id] = {}
-
-#     def savekey(self, message):
-#         self.mes = res[message.chat.id][0]
-#         self.call = res[message.chat.id][1]
-#         bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
-#         self.dict_api[message.chat.id]['key'] = message.text
-#         bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
-#         bot.send_message(self.mes.chat.id, "Se guardo su key")
-
-#     def savesecret(self, message):
-#         self.mes = res[message.chat.id][0]
-#         self.call = res[message.chat.id][1]
-#         bot.delete_message(chat_id=self.mes.chat.id, message_id=self.mes.id)
-#         self.dict_api[message.chat.id]['secret'] = message.text
-#         bot.delete_message(chat_id=self.mes.chat.id, message_id=message.id)
-#         bot.send_message(self.mes.chat.id, "Se guardo su secret")
 
 
 # bot = TeleBot("5530592078:AAEcb0EiHsntHj2HlqDIqqY9QKkxbS4070E")#rosa
@@ -183,9 +155,11 @@ def _save(call):
             elif float(balance) != -1:
                 bot.send_message(
                     call.from_user.id, 'Su saldo es {} USDT, pero no alcanzas, debes recargar más.'.format(round(balance, 2)))
+                connUsers.delete_User(str(call.from_user.id))
         else:
             mess = bot.send_message(
                 chat_id=call.from_user.id, text='Por favor escribe tus APIS')
+
             order_exe = Thread(target=delete_m, args=(mess,))
             order_exe.start()
 
