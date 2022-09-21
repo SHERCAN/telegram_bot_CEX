@@ -1,13 +1,13 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class UserModel(BaseModel):
-    _id: str = ''
+    id: str = Field(..., alias='_id')
     cex: str = ''
     API_key: str = ''
     API_secret: str = ''
     initBalance: float = 0.0
-    enabled: bool = False
+    enabled: Optional[bool] = False
     address: str = ''
-    private_key: str = ''
+    privateKey: str = ''

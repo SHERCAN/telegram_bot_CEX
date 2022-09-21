@@ -37,7 +37,18 @@ if __name__ == '__main__':
 """
 This Example will show you how to use CallbackData
 """
-from binance.client import Client
-cl=Client('WEMGeMxAHpBZFyvWyz2COVgQfOzLWla2WKKczHItgcpLCuVvqUZiLP4rzMDAvYu3','GoUVha8y1DJzdUCE9gNW7KxKVNN2z509AtMzM62QoFYDI0kLdrUcsVv0Mk1dtnB'
-)
-list_balance = cl.futures_account_balance()
+# from binance.client import Client
+# cl=Client('WEMGeMxAHpBZFyvWyz2COVgQfOzLWla2WKKczHItgcpLCuVvqUZiLP4rzMDAvYu3','GoUVha8y1DJzdUCE9gNW7KxKVNN2z509AtMzM62QoFYDI0kLdrUcsVv0Mk1dtnB'
+# )
+# list_balance = cl.futures_account_balance()
+
+from config.bdConnect import usersFunc
+from models.models import UserModel
+from wallet.wallet import Wallet_tech
+objeto = usersFunc()
+# objeto.send_User(UserModel(_id='123', cex='binance', API_key='WEMGeMxAHpBZFyvWyz2COVgQfOzLWla2WKKczHItgcpLCuVvqUZiLP4rzMDAvYu3',
+# API_secret='GoUVha8y1DJzdUCE9gNW7KxKVNN2z509AtMzM62QoFYDI0kLdrUcsVv0Mk1dtnB', initBalance=0.0, enabled=False, address='', privateKey=''))
+#obj = objeto.read_User('123')
+# print(obj['API_key'])
+obj = Wallet_tech()
+print(obj.check_balance('TBZKTBoNJoA9YE2xr8h29JNXnEmZSmW8qE'))

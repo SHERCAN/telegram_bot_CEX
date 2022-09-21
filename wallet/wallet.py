@@ -1,25 +1,31 @@
 from tronpy import Tron
 from tronpy.keys import PrivateKey
+from qrcode import QRCode
+from qrcode.constants import ERROR_CORRECT_L
 
 
 class Wallet_tech:
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self) -> None:
         self.__client = Tron()
-        try:
-            self.__private_key = kwargs['priv_key']
-            self.address = kwargs['address']
-        except:
-            self.__private_key = ''
-            self.address = ''
 
-    def create_wallet(self) -> dict():
+    def create_wallet(self, id) -> dict():
         # creación de la wallet en la red de tron
         wallet = self.__client.generate_address()
+        qr = QRCode(
+            version=1,
+            error_correction=ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(wallet['base58check_address'])
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        img.save('qr-'+str(id)+'.png')
         return {'private_key': wallet['private_key'],
                 'address': wallet['base58check_address']}
 
-    def check_balance(self, address: str) -> float:
+    def get_balance(self, address: str) -> float:
         # verificar el balance en la billetera
         balance = self.__client.get_account_balance(addr=address)
         return balance
