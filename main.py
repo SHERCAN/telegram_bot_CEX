@@ -204,7 +204,7 @@ def updateBD(mm, call):
 def _verifying(call):
     base_data = connUsers.read_User(str(call.from_user.id))
     wallet = Wallet_tech()
-    balance = wallet.get_balance('TMWfP525ovrpfe9V6iZL51MgtoDRF8FT9B')
+    balance = wallet.get_balance(base_data['address'])
     cl = Cliente(base_data['API_key'], base_data['API_secret'])
     markPrice = cl.client.futures_mark_price(symbol='TRXUSDT')['markPrice']
     if float(markPrice)*float(balance) >= base_data['initBalance']*0.1:
